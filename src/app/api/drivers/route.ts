@@ -1,26 +1,32 @@
 import { NextResponse } from 'next/server';
+import { PrismaClient } from '@prisma/client';
 
-let drivers: { id: number; name: string; license: string }[] = [];
+const prisma = new PrismaClient();
 
 export async function GET() {
+  const drivers = await prisma.driver.findMany();
   return NextResponse.json(drivers);
 }
 
 export async function POST(request: Request) {
   const { name, license } = await request.json();
-  const newDriver = { id: Date.now(), name, license };
-  drivers.push(newDriver);
+  const newDriver = await prisma.driver.create({
+    data: { name, license },
+  });
   return NextResponse.json(newDriver);
 }
 
 export async function PUT(request: Request) {
   const { id, name, license } = await request.json();
-  drivers = drivers.map(driver => driver.id === id ? { ...driver, name, license } : driver);
-  return NextResponse.json({ id, name, license });
+  const updatedDriver = await prisma.driver.update({
+    where: { id },
+    data: { name, license },
+  });
+  return NextResponse.json(updatedDriver);
 }
 
 export async function DELETE(request: Request) {
   const { id } = await request.json();
-  drivers = drivers.filter(driver => driver.id !== id);
+  await prisma.driver.delete({ where: { id } });
   return NextResponse.json({ success: true });
 }

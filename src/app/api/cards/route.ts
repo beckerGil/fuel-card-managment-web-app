@@ -1,26 +1,32 @@
 import { NextResponse } from 'next/server';
+import { PrismaClient } from '@prisma/client';
 
-let cards: { id: number; name: string; number: string }[] = [];
+const prisma = new PrismaClient();
 
 export async function GET() {
+  const cards = await prisma.card.findMany();
   return NextResponse.json(cards);
 }
 
 export async function POST(request: Request) {
   const { name, number } = await request.json();
-  const newCard = { id: Date.now(), name, number };
-  cards.push(newCard);
+  const newCard = await prisma.card.create({
+    data: { name, number },
+  });
   return NextResponse.json(newCard);
 }
 
 export async function PUT(request: Request) {
   const { id, name, number } = await request.json();
-  cards = cards.map(card => card.id === id ? { ...card, name, number } : card);
-  return NextResponse.json({ id, name, number });
+  const updatedCard = await prisma.card.update({
+    where: { id },
+    data: { name, number },
+  });
+  return NextResponse.json(updatedCard);
 }
 
 export async function DELETE(request: Request) {
   const { id } = await request.json();
-  cards = cards.filter(card => card.id !== id);
+  await prisma.card.delete({ where: { id } });
   return NextResponse.json({ success: true });
 }
